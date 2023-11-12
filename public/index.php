@@ -5,6 +5,15 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use DI\Container;
+use Hexlet\Code\Connection;
+
+try {
+    Connection::get()->connect();
+    echo 'A connection to the PostgreSQL database sever has been established successfully.';
+    echo shell_exec("psql -a -d $DATABASE_URL -f database.sql");
+} catch (\PDOException $e) {
+    echo $e->getMessage();
+}
 
 $container = new Container();
 $container->set('renderer', function () {
