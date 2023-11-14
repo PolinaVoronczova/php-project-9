@@ -22,17 +22,24 @@ final class Connection
         }
         if (isset($databaseUrl['host'])) {
             $params['host'] = $databaseUrl['host'];
-            $params['port'] = isset($databaseUrl['port']) ? $databaseUrl['port'] : null;
-            $params['database'] = isset($databaseUrl['path']) ? ltrim($databaseUrl['path'], '/') : null;
-            $params['user'] = isset($databaseUrl['user']) ? $databaseUrl['user'] : null;
-            $params['password'] = isset($databaseUrl['pass']) ? $databaseUrl['pass'] : null;
+            $params['port'] = $databaseUrl['port'];
+            $params['database'] = ltrim($databaseUrl['path'], '/');
+            $params['user'] = $databaseUrl['user'];
+            $params['password'] = $databaseUrl['pass'];
         } else {
             $params = parse_ini_file('database.ini');
         }
         if ($params === false) {
             throw new \Exception("Error reading database configuration file");
         }
-        $conStr = "pgsql:host={$params['host']};dbname={$params['database']};user={$params['user']};port={$params['port']};password={$params['password']}";
+        $conStr = sprintf(
+            "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
+            $params['host'],
+            $params['port'],
+            $params['database'],
+            $params['user'],
+            $params['password']
+        );
         $pdo = new \PDO($conStr);
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         return $pdo;
