@@ -10,6 +10,7 @@ use Hexlet\Code\Connection;
 try {
     Connection::get()->connect();
     echo 'A connection to the PostgreSQL database sever has been established successfully.';
+    $DATABASE_URL = getenv('DATABASE_URL');
     echo shell_exec("psql -a -d $DATABASE_URL -f database.sql");
 } catch (\PDOException $e) {
     echo $e->getMessage();
