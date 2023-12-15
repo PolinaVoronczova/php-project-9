@@ -1,4 +1,4 @@
-<head>
+<html><head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Анализатор страниц</title>
@@ -7,6 +7,14 @@
 </head>
 <body class="min-vh-100 d-flex flex-column">
     <header class="flex-shrink-0">
+    <?php if ($flash) : ?>
+    <?php foreach ($flash["success"] as $message) : ?>
+      <div class="alert alert-success" role="alert">
+          <?= $message ?>
+      </div>
+  <?php endforeach ?>
+  <?php endif ?>
+
         <nav class="navbar navbar-expand-md navbar-dark bg-dark px-3">
             <a class="navbar-brand" href="/">Анализатор страниц</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,42 +23,54 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-    <a class="nav-link active" href="/">Главная</a>
+    <a class="nav-link" href="/">Главная</a>
 </li>
 
                     <li class="nav-item">
     <a class="nav-link" href="/urls">Сайты</a>
 </li>
-
                 </ul>
             </div>
         </nav>
     </header>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
-                    <div class="row">
-    <div class="col-12 col-md-10 col-lg-8 mx-auto border rounded-3 bg-light p-5">
-        <h1 class="display-3">Анализатор страниц</h1>
-        <p class="lead">Бесплатно проверяйте сайты на SEO пригодность</p>
-        <form action="/urls" method="post" class="row" required="">
-            <div class="col-8">
-                <?php if ($errors) : ?>
-                    <input type="text" name="url[name]" value="<?= $url ?>" class="form-control form-control-lg is-invalid" placeholder="https://www.example.com">
-                    <div class="invalid-feedback">
-                        <?= $errors['name'][0] ?>
-                    </div>
-                <?php else: ?>
-                    <input type="text" name="url[name]" value="<?= $url ?>" class="form-control form-control-lg" placeholder="https://www.example.com">
-                <?php endif ?>
-            </div>
-            <div class="col-2">
-                <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3" value="Проверить">
-            </div>
-
-        </form>
-
-    </div>
-</div>
+                      <h1>Сайт: <?=$urls["name"]?></h1>
+                      <div class="table-responsive">
+    <table class="table table-bordered table-hover text-nowrap" data-test="url">
+      <tbody>
+        <tr>
+          <td>ID</td>
+          <td><?=$urls["id"]?></td>
+        </tr>
+        <tr>
+          <td>Имя</td>
+          <td><?=$urls["name"]?></td>
+        </tr>
+        <tr>
+          <td>Дата создания</td>
+          <td><?=$urls["created_at"]?></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h2 class="mt-5 mb-3">Проверки</h2>
+  <form method="post" action="/urls/<?=$urls["id"]?>/checks">
+    <input type="submit" class="btn btn-primary" value="Запустить проверку">
+  </form>
+  <table class="table table-bordered table-hover" data-test="checks">
+    <tbody>
+      <tr>
+        <th>ID</th>
+        <th>Код ответа</th>
+        <th>h1</th>
+        <th>title</th>
+        <th>description</th>
+        <th>Дата создания</th>
+      </tr>
+      <!--?php foreach ($checks as $check): ?-->
+          </tbody>
+  </table>
         </div>
     </main>
-</body>
+</body></html>
