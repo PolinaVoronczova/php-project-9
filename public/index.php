@@ -7,6 +7,8 @@ use Slim\Middleware\MethodOverrideMiddleware;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use Hexlet\Code\Connection;
+use GuzzleHttp\Client;
+use DiDom\Document;
 
 try {
     Connection::get()->connect();
@@ -65,7 +67,7 @@ $app->post('/urls', function ($request, $response) {
     $v->rule('required', 'name')->message('URL не должен быть пустым');
     $v->rule('lengthMax', 'name', 255)->message('Длинна ссылки не должна превышать 255 символов');
     $v->rule('url', 'name')->message('Некорректный URL');
-     if (!$v->validate()) {
+    if (!$v->validate()) {
         $params = [
             'errors' => $v->errors(),
             'url' => $url['name']
@@ -96,11 +98,11 @@ $app->post('/urls', function ($request, $response) {
 );
 $app->get('/urls/{id}', function ($request, $response, $args) {
     $pdo = Connection::get()->connect();
-    $Url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
-    var_dump($Url);
+    $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
+    var_dump($url);
     $messages = $this->get('flash')->getMessages();
     $params = [
-        'urls' => $Url,
+        'urls' => $url,
         'flash' => isset($messages) ? $messages : false
     ];
     $messages = $this->get('flash')->getMessages();
@@ -118,9 +120,49 @@ $app->get('/urls', function ($request, $response) {
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
 });
 
-$app->post('urls/{url_id}/checks', function ($request, $response) {
-
-    return $this->get('renderer')->render($response, 'url.phtml', $params);
+$app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
+    $pdo = Connection::get()->connect();
+    $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
+    $client = new Client(
+    [
+        'base_uri' => $url['name'],
+        'timeout'  => 2.0,
+    ]);
+    try {
+        $answer = $client->get('/');
+        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+    } catch (GuzzleHttp\Exception\ConnectException $e) {
+        $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+        return $response->withRedirect("/urls/{$args['url_id']}", 302);
+    } catch (GuzzleHttp\Exception\RequestException $e) {
+        $answer = $e->getResponse();
+        $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
+    }
+    $statusCode = optional($answer)->getStatusCode();
+    $html = optional($answer)->getBody()->getContents();
+    $document = new Document($html, false);
+    $h1 = optional($document->first('h1'))->text();
+    $title = optional($document->first('title'))->text();
+    $description = optional($document->first('meta[name=description]'))->getAttribute('content');
+    $nowData = new DateTime('now');
+    $created_at = $nowData->format('Y-m-d H:i:s');
+    $sql = "INSERT INTO urls (url_id, status_code, h1, title, description, created_at)
+    VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)";
+    $stmt = $pdo->prepare($sql);
+    $urlParam = [
+        ':url_id' => $args['url_id'],
+        ':status_code' => $statusCode,
+        ':h1' => $h1,
+        ':title' => $title,
+        ':description' => $description,
+        ':created_at' => $created_at,
+    ];
+    var_dump($urlParam);
+    $stmt->execute($urlParam);
+    $stmt->bindValue(':name', $url['name']);
+    $stmt->bindValue(':created_at', $created_at);
+    $stmt->execute();
+    return $response->withRedirect("/urls/{$args['url_id']}", 302);
 });
 $app->run();
 
