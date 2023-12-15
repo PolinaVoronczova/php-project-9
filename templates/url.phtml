@@ -7,14 +7,6 @@
 </head>
 <body class="min-vh-100 d-flex flex-column">
     <header class="flex-shrink-0">
-    <?php if ($flash) : ?>
-    <?php foreach ($flash["success"] as $message) : ?>
-      <div class="alert alert-success" role="alert">
-          <?= $message ?>
-      </div>
-  <?php endforeach ?>
-  <?php endif ?>
-
         <nav class="navbar navbar-expand-md navbar-dark bg-dark px-3">
             <a class="navbar-brand" href="/">Анализатор страниц</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,6 +25,13 @@
             </div>
         </nav>
     </header>
+    <?php if ($flash) : ?>
+    <?php foreach ($flash["success"] as $message) : ?>
+      <div class="alert alert-success" role="alert">
+          <?= $message ?>
+      </div>
+  <?php endforeach ?>
+  <?php endif ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
                       <h1>Сайт: <?=$urls["name"]?></h1>
@@ -68,6 +67,16 @@
         <th>description</th>
         <th>Дата создания</th>
       </tr>
+      <?php foreach ($url_checks as $url) : ?>
+        <tr>
+        <td><?= $url['id']?></td>
+        <td><?= $url['status_code']?></td>
+        <td><?= $url['h1']?></td>
+        <td><?= $url['title']?></td>
+        <td><?= $url['description']?></td>
+        <td><?= $url['created_at']?></td>
+        </tr>
+      <?php endforeach ?>
       <!--?php foreach ($checks as $check): ?-->
           </tbody>
   </table>

@@ -22,7 +22,7 @@ final class Connection
         }
         if (isset($databaseUrl['host'])) {
             $params['host'] = $databaseUrl['host'];
-            $params['port'] = isset($databaseUrl['port']) ?:5432;
+            $params['port'] = isset($databaseUrl['port']) ?: 5432;
             $params['database'] = ltrim($databaseUrl['path'], '/');
             $params['user'] = $databaseUrl['user'];
             $params['password'] = $databaseUrl['pass'];
@@ -60,6 +60,5 @@ final class Connection
 
     protected function __construct()
     {
-
     }
 }

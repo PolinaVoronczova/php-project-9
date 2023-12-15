@@ -57,8 +57,8 @@ $app->get('/', function ($request, $response) {
         echo $e->getMessage();
     }
         return $this->get('renderer')->render($response, 'index.phtml');
-    }
-);
+});
+
 $app->post('/urls', function ($request, $response) {
     $pdo = Connection::get()->connect();
     $url = $request->getParsedBodyParam('url');
@@ -94,16 +94,19 @@ $app->post('/urls', function ($request, $response) {
         $this->get('flash')->addMessage('success', 'Страница уже существует');
     }
     return $response->withRedirect("/urls/{$id}", 302);
-    }
-);
+});
 $app->get('/urls/{id}', function ($request, $response, $args) {
     $pdo = Connection::get()->connect();
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
+    $urlCheacks = $pdo->query("SELECT * FROM url_checks
+    WHERE url_id={$args['id']} ORDER BY url_id DESC")->fetchAll(\PDO::FETCH_ASSOC);
     var_dump($url);
+    var_dump($urlCheacks);
     $messages = $this->get('flash')->getMessages();
     $params = [
         'urls' => $url,
-        'flash' => isset($messages) ? $messages : false
+        'flash' => isset($messages) ? $messages : false,
+        'url_checks' => $urlCheacks
     ];
     $messages = $this->get('flash')->getMessages();
     if (isset($messages)) {
@@ -114,17 +117,23 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
 
 $app->get('/urls', function ($request, $response) {
     $pdo = Connection::get()->connect();
-    $allUrl = $pdo->query("SELECT * FROM urls")->fetchAll(\PDO::FETCH_ASSOC);
+    $allUrl = $pdo->query("
+    SELECT DISTINCT ON (urls.id) urls.id, urls.name, url_checks.created_at, url_checks.status_code 
+    FROM urls LEFT JOIN url_checks
+    ON urls.id=url_checks.url_id
+    ORDER BY urls.id, url_checks.created_at DESC")->fetchAll(\PDO::FETCH_ASSOC);
     var_dump($allUrl);
-    $params = ['urls' => $allUrl];
+    $params = [
+        'urls' => $allUrl
+    ];
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
 });
 
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
     $pdo = Connection::get()->connect();
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
-    $client = new Client(
-    [
+    
+    $client = new Client([
         'base_uri' => $url['name'],
         'timeout'  => 2.0,
     ]);
@@ -146,7 +155,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
     $description = optional($document->first('meta[name=description]'))->getAttribute('content');
     $nowData = new DateTime('now');
     $created_at = $nowData->format('Y-m-d H:i:s');
-    $sql = "INSERT INTO urls (url_id, status_code, h1, title, description, created_at)
+    $sql = "INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
     VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)";
     $stmt = $pdo->prepare($sql);
     $urlParam = [
@@ -159,9 +168,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
     ];
     var_dump($urlParam);
     $stmt->execute($urlParam);
-    $stmt->bindValue(':name', $url['name']);
-    $stmt->bindValue(':created_at', $created_at);
-    $stmt->execute();
     return $response->withRedirect("/urls/{$args['url_id']}", 302);
 });
 $app->run();
