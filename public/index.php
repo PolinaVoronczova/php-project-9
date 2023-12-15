@@ -62,7 +62,6 @@ $app->get('/', function ($request, $response) {
 $app->post('/urls', function ($request, $response) {
     $pdo = Connection::get()->connect();
     $url = $request->getParsedBodyParam('url');
-    var_dump('hi');
     $v = new Valitron\Validator(array('name' => $url['name']));
     $v->rule('required', 'name')->message('URL не должен быть пустым');
     $v->rule('lengthMax', 'name', 255)->message('Длинна ссылки не должна превышать 255 символов');
