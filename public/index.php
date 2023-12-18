@@ -59,13 +59,14 @@ $app->get('/', function ($request, $response) {
         return $this->get('renderer')->render($response, 'index.phtml');
 });
 
-$app->post('/urls', function ($request, $response) {
+$app->post('/urls', function ($request, $response) use ($router) {
     $pdo = Connection::get()->connect();
     $url = $request->getParsedBodyParam('url');
     $v = new Valitron\Validator(array('name' => $url['name']));
     $v->rule('required', 'name')->message('URL не должен быть пустым');
     $v->rule('lengthMax', 'name', 255)->message('Длинна ссылки не должна превышать 255 символов');
     $v->rule('url', 'name')->message('Некорректный URL');
+
     if (!$v->validate()) {
         $params = [
             'errors' => $v->errors(),
@@ -77,7 +78,7 @@ $app->post('/urls', function ($request, $response) {
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
     $stmt->execute(['name' => $url['name']]);
     $urls = $stmt->fetch(\PDO::FETCH_ASSOC);
-    var_dump($urls);
+
     if (!$urls) {
         $nowData = new DateTime('now');
         $created_at = $nowData->format('Y-m-d H:i:s');
@@ -92,15 +93,14 @@ $app->post('/urls', function ($request, $response) {
         $id = $urls['id'];
         $this->get('flash')->addMessage('success', 'Страница уже существует');
     }
-    return $response->withRedirect("/urls/{$id}", 302);
-});
+    return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
+})->setName('addUrl');
+
 $app->get('/urls/{id}', function ($request, $response, $args) {
     $pdo = Connection::get()->connect();
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
     $urlCheacks = $pdo->query("SELECT * FROM url_checks
     WHERE url_id={$args['id']} ORDER BY url_id DESC")->fetchAll(\PDO::FETCH_ASSOC);
-    var_dump($url);
-    var_dump($urlCheacks);
     $messages = $this->get('flash')->getMessages();
     $params = [
         'urls' => $url,
@@ -112,7 +112,7 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
         $params['flash'] = $messages;
     }
     return $this->get('renderer')->render($response, 'url.phtml', $params);
-});
+})->setName('showUrl');
 
 $app->get('/urls', function ($request, $response) {
     $pdo = Connection::get()->connect();
@@ -121,14 +121,13 @@ $app->get('/urls', function ($request, $response) {
     FROM urls LEFT JOIN url_checks
     ON urls.id=url_checks.url_id
     ORDER BY urls.id, url_checks.created_at DESC")->fetchAll(\PDO::FETCH_ASSOC);
-    var_dump($allUrl);
     $params = [
         'urls' => $allUrl
     ];
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
-});
+})->setName('showUrls');
 
-$app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
+$app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
     $pdo = Connection::get()->connect();
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
     
@@ -136,16 +135,18 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
         'base_uri' => $url['name'],
         'timeout'  => 2.0,
     ]);
+
     try {
         $answer = $client->get('/');
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (GuzzleHttp\Exception\ConnectException $e) {
         $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
-        return $response->withRedirect("/urls/{$args['url_id']}", 302);
+        return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
     } catch (GuzzleHttp\Exception\RequestException $e) {
         $answer = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
     }
+
     $statusCode = optional($answer)->getStatusCode();
     $html = optional($answer)->getBody()->getContents();
     $document = new Document($html, false);
@@ -165,10 +166,11 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) {
         ':description' => $description,
         ':created_at' => $created_at,
     ];
-    var_dump($urlParam);
     $stmt->execute($urlParam);
-    return $response->withRedirect("/urls/{$args['url_id']}", 302);
-});
+    return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
+})->setName('addChecks');
+
+$router = $app->getRouteCollector()->getRouteParser();
 $app->run();
 
 function tableExists(\PDO $pdo, string $table)
