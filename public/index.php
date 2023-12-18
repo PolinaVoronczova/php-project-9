@@ -31,6 +31,7 @@ $container->set('flash', function () {
 
 $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
+$router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, $response) {
     $pdo = Connection::get()->connect();
@@ -93,7 +94,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
         $id = $urls['id'];
         $this->get('flash')->addMessage('success', 'Страница уже существует');
     }
-    return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
+    return $response->withRedirect($router->urlFor('showUrl', ['id' => $id]), 302);
 })->setName('addUrl');
 
 $app->get('/urls/{id}', function ($request, $response, $args) {
@@ -141,7 +142,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (GuzzleHttp\Exception\ConnectException $e) {
         $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
-        return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
+        return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
     } catch (GuzzleHttp\Exception\RequestException $e) {
         $answer = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
@@ -167,10 +168,10 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':created_at' => $created_at,
     ];
     $stmt->execute($urlParam);
-    return $response->withRedirect($router->urlFor('showUrl', ['id' => $url['name']]), 302);
+    return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
 
-$router = $app->getRouteCollector()->getRouteParser();
+
 $app->run();
 
 function tableExists(\PDO $pdo, string $table)
