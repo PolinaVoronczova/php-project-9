@@ -131,7 +131,7 @@ $app->get('/urls', function ($request, $response) {
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
     $pdo = Connection::get()->connect();
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
-    
+
     $client = new Client([
         'base_uri' => $url['name'],
         'timeout'  => 2.0,
@@ -170,7 +170,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
-
 
 $app->run();
 
