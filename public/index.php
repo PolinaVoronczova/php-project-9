@@ -10,12 +10,6 @@ use Hexlet\Code\Connection;
 use GuzzleHttp\Client;
 use DiDom\Document;
 
-try {
-    Connection::get()->connect();
-    $DATABASE_URL = getenv('DATABASE_URL');
-} catch (\PDOException $e) {
-    echo $e->getMessage();
-}
 session_start();
 $container = new Container();
 $container->set('renderer', function () {
@@ -29,39 +23,27 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 
+$container->set('connection', function () {
+    try {
+        $pdo = Connection::get()->connect();
+        $DATABASE_URL = getenv('DATABASE_URL');
+        return $pdo;
+    } catch (\PDOException $e) {
+        echo $e->getMessage();
+    }
+});
+
 $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, $response) {
-    $pdo = Connection::get()->connect();
-    try {
-        if (!(tableExists($pdo, "urls"))) {
-            $pdo->exec("CREATE TABLE urls (
-                id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                name        varchar(255),
-                created_at  timestamp
-            );");
-        }
-        if (!(tableExists($pdo, "url_checks"))) {
-            $pdo->exec("CREATE TABLE url_checks (
-                id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                url_id       bigint REFERENCES urls (id),
-                status_code varchar(255),
-                h1            varchar(255),
-                title         varchar(255),
-                description   varchar(255),
-                created_at    timestamp
-            );");
-        }
-    } catch (\PDOException $e) {
-        echo $e->getMessage();
-    }
         return $this->get('renderer')->render($response, 'index.phtml');
 });
 
 $app->post('/urls', function ($request, $response) use ($router) {
-    $pdo = Connection::get()->connect();
+    $pdo = $this->get('connection');
+    createTableIfNotExists($pdo);
     $url = $request->getParsedBodyParam('url');
     $v = new Valitron\Validator(array('name' => $url['name']));
     $v->rule('required', 'name')->message('URL не должен быть пустым');
@@ -98,7 +80,8 @@ $app->post('/urls', function ($request, $response) use ($router) {
 })->setName('addUrl');
 
 $app->get('/urls/{id}', function ($request, $response, $args) {
-    $pdo = Connection::get()->connect();
+    $pdo = $this->get('connection');
+    createTableIfNotExists($pdo);
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
     $urlCheacks = $pdo->query("SELECT * FROM url_checks
     WHERE url_id={$args['id']} ORDER BY url_id DESC")->fetchAll(\PDO::FETCH_ASSOC);
@@ -116,7 +99,8 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
 })->setName('showUrl');
 
 $app->get('/urls', function ($request, $response) {
-    $pdo = Connection::get()->connect();
+    $pdo = $this->get('connection');
+    createTableIfNotExists($pdo);
     $allUrl = $pdo->query("
     SELECT DISTINCT ON (urls.id) urls.id, urls.name, url_checks.created_at, url_checks.status_code 
     FROM urls LEFT JOIN url_checks
@@ -129,7 +113,8 @@ $app->get('/urls', function ($request, $response) {
 })->setName('showUrls');
 
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
-    $pdo = Connection::get()->connect();
+    $pdo = $this->get('connection');
+    createTableIfNotExists($pdo);
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
 
     $client = new Client([
@@ -167,12 +152,38 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':description' => $description,
         ':created_at' => $created_at,
     ];
+    var_dump($urlParam);
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
 
 $app->run();
 
+function createTableIfNotExists($pdo)
+{
+    try {
+        if (!(tableExists($pdo, "urls"))) {
+            $pdo->exec("CREATE TABLE urls (
+                id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                name        varchar(255),
+                created_at  timestamp
+            );");
+        }
+        if (!(tableExists($pdo, "url_checks"))) {
+            $pdo->exec("CREATE TABLE url_checks (
+                id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                url_id       bigint REFERENCES urls (id),
+                status_code varchar(255),
+                h1            varchar(255),
+                title         varchar(255),
+                description   varchar(600),
+                created_at    timestamp
+            );");
+        }
+    } catch (\PDOException $e) {
+        echo $e->getMessage();
+    }
+}
 function tableExists(\PDO $pdo, string $table)
 {
     try {

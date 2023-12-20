@@ -7,10 +7,10 @@ CREATE TABLE urls (
     created_at  timestamp
 );
 
-CREATE TABLE cheack_history (
+CREATE TABLE url_checks (
     id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    site_id       bigint REFERENCES urls (id),
-    response_code varchar(255),
+    url_id       bigint REFERENCES urls (id),
+    status_code varchar(255),
     h1            varchar(255),
     title         varchar(255),
     description   varchar(255),
