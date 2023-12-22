@@ -15,34 +15,26 @@ final class Connection
      * @return \PDO
      * @throws \Exception
      */
-    public function connect()
+    public function connect(): void
     {
-        if (getenv('DATABASE_URL')) {
-            $databaseUrl = parse_url(getenv('DATABASE_URL'));
+        $databaseUrl = parse_url((string) getenv('DATABASE_URL'));
+        $username = $databaseUrl['user'];
+        $password = $databaseUrl['pass'];
+        $host = $databaseUrl['host'];
+        $port = $databaseUrl['port'];
+        $dbName = ltrim($databaseUrl['path'], '/');
+        $dsn = "pgsql:host=$host;port=$port;dbname=$dbName";
+        $options = [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC
+        ];
+        try {
+            $pdo = new \PDO($dsn, $username, $password, $options);
+        } catch (\PDOException $e) {
+            echo $e->getMessage();
+            die();
         }
-        if (isset($databaseUrl['host'])) {
-            $params['host'] = $databaseUrl['host'];
-            $params['port'] = isset($databaseUrl['port']) ?: 5432;
-            $params['database'] = ltrim($databaseUrl['path'], '/');
-            $params['user'] = $databaseUrl['user'];
-            $params['password'] = $databaseUrl['pass'];
-        } else {
-            $params = parse_ini_file('database.ini');
-        }
-        if ($params === false) {
-            throw new \Exception("Error reading database configuration file");
-        }
-        $conStr = sprintf(
-            "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
-            $params['host'],
-            $params['port'],
-            $params['database'],
-            $params['user'],
-            $params['password']
-        );
-        $pdo = new \PDO($conStr);
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        return $pdo;
+        $this->connection = $pdo;
     }
 
     /**
