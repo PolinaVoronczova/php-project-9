@@ -24,13 +24,13 @@ $container->set('flash', function () {
 });
 
 $container->set('connection', function () {
-    try {
+    // try {
         $pdo = Connection::get()->connect();
         $DATABASE_URL = getenv('DATABASE_URL');
         return $pdo;
-    } catch (\PDOException $e) {
-        echo $e->getMessage();
-    }
+    // } catch (\PDOException $e) {
+    //     echo $e->getMessage();
+    // }
 });
 
 $app->addErrorMiddleware(true, true, true);
