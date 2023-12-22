@@ -29,7 +29,7 @@ $container->set('connection', function () {
     }
     if (isset($databaseUrl['host'])) {
         $params['host'] = $databaseUrl['host'];
-        $params['port'] = $databaseUrl['port'];
+        $params['port'] = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
         $params['database'] = ltrim($databaseUrl['path'], '/');
         $params['user'] = $databaseUrl['user'];
         $params['password'] = $databaseUrl['pass'];
