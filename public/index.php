@@ -6,7 +6,6 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Middleware\MethodOverrideMiddleware;
 use Slim\Factory\AppFactory;
 use DI\Container;
-use Hexlet\Code\Connection;
 use GuzzleHttp\Client;
 use DiDom\Document;
 
