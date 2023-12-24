@@ -34,7 +34,7 @@ final class Connection
             echo $e->getMessage();
             die();
         }
-        $this->connection = $pdo;
+        $this->Connection = $pdo;
     }
 
     /**
