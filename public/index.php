@@ -30,9 +30,12 @@ $container->set('connection', function () {
     if (isset($databaseUrl['host'])) {
         $params['host'] = $databaseUrl['host'];
         $params['port'] = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
-        $params['database'] = ltrim($databaseUrl['path'], '/');
-        $params['user'] = $databaseUrl['user'];
-        $params['password'] = $databaseUrl['pass'];
+        $params['database'] = isset($databaseUrl['path']) ?
+        ltrim($databaseUrl['path'], '/') : null;
+        $params['user'] = isset($databaseUrl['user']) ?
+        $databaseUrl['user'] : null;
+        $params['password'] = isset($databaseUrl['pass']) ?
+        $databaseUrl['pass'] : null;
     } else {
         $params = parse_ini_file('database.ini');
     }
