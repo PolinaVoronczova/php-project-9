@@ -15,7 +15,7 @@ final class Connection
      * @return \PDO
      * @throws \Exception
      */
-    public function connect(): void
+    public function connect() : \PDO
     {
         $databaseUrl = parse_url((string) getenv('DATABASE_URL'));
         $username = $databaseUrl['user'];
