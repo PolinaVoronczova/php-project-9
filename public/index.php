@@ -73,7 +73,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
             'errors' => $v->errors(),
             'url' => $url['name']
         ];
-        return $this->get('renderer')->render($response, 'index.phtml', $params);
+        return $this->get('renderer')->render($response, 'index.phtml', $params)->withStatus(422);
     }
 
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
@@ -142,7 +142,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (GuzzleHttp\Exception\ConnectException $e) {
         $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
-        return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
+        return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 422);
     } catch (GuzzleHttp\Exception\RequestException $e) {
         $answer = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
