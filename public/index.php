@@ -167,7 +167,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':description' => $description,
         ':created_at' => $created_at,
     ];
-    var_dump($urlParam);
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
