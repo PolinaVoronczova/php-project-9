@@ -37,7 +37,6 @@ $container->set('connection', function () {
         $databaseUrl['pass'] : null;
     } else {
         $params = parse_ini_file('../src/database.ini');
-        var_dump($params);
     }
     if ($params === false) {
         throw new \Exception("Error reading database configuration file");
