@@ -25,9 +25,16 @@
             </div>
         </nav>
     </header>
-    <?php if ($flash) : ?>
-    <?php foreach ($flash as $message) : ?>
+    <?php if ($flash['success']) : ?>
+    <?php foreach ($flash['success'] as $message) : ?>
       <div class="alert alert-success" role="alert">
+          <?= $message ?>
+      </div>
+  <?php endforeach ?>
+  <?php endif ?>
+  <?php if ($flash['warning']) : ?>
+    <?php foreach ($flash['warning'] as $message) : ?>
+      <div class="alert alert-warning" role="alert">
           <?= $message ?>
       </div>
   <?php endforeach ?>

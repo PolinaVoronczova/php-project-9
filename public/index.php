@@ -36,7 +36,8 @@ $container->set('connection', function () {
         $params['password'] = isset($databaseUrl['pass']) ?
         $databaseUrl['pass'] : null;
     } else {
-        $params = parse_ini_file('database.ini');
+        $params = parse_ini_file('../src/database.ini');
+        var_dump($params);
     }
     if ($params === false) {
         throw new \Exception("Error reading database configuration file");
@@ -143,7 +144,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         $answer = $client->get('/');
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     } catch (GuzzleHttp\Exception\ConnectException $e) {
-        $this->get('flash')->addMessage('error', 'Произошла ошибка при проверке, не удалось подключиться');
+        $this->get('flash')->addMessage('warning', 'Произошла ошибка при проверке, не удалось подключиться');
         return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 422);
     } catch (GuzzleHttp\Exception\RequestException $e) {
         $answer = $e->getResponse();
