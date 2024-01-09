@@ -161,16 +161,28 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $sql = "INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
     VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)";
     $stmt = $pdo->prepare($sql);
+
     $urlParam = [
         ':url_id' => $args['url_id'],
         ':status_code' => $statusCode,
-        ':h1' => $h1 !== null && strlen($h1) <= 255 ? $h1 : mb_strimwidth($h1, 0, 255, "..."),
-        ':title' =>$title !== null && strlen($title) <= 255 ? $title
-        : mb_strimwidth($title, 0, 255, "..."),
-        ':description' =>$description !== null && strlen($description) <= 600 ? $description
-        : mb_strimwidth($description, 0, 600, "..."),
+        ':h1' =>  '',
+        ':title' => '',
+        ':description' => '',
         ':created_at' => $created_at,
     ];
+
+    if ($h1 != null) {
+        $urlParam[':h1'] = strlen($h1) <= 255 ?
+        $h1 : mb_strimwidth($h1, 0, 255, "...");
+    }
+    if ($title != null) {
+        $urlParam[':title'] = strlen($title) <= 255 ?
+        $title : mb_strimwidth($title, 0, 255, "...");
+    }
+    if ($description != null) {
+        $urlParam[':description'] = strlen($description) <= 600 ?
+        $description : mb_strimwidth($description, 0, 600, "...");
+    }
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
