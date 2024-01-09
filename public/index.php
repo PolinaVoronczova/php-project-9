@@ -164,10 +164,10 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $urlParam = [
         ':url_id' => $args['url_id'],
         ':status_code' => $statusCode,
-        ':h1' => isset($h1) && strlen($h1) <= 255 ? $h1 : mb_strimwidth($h1, 0, 255, "..."),
-        ':title' =>isset($title) && strlen($title) <= 255 ? $title
+        ':h1' => $h1 !== null && strlen($h1) <= 255 ? $h1 : mb_strimwidth($h1, 0, 255, "..."),
+        ':title' =>$title !== null && strlen($title) <= 255 ? $title
         : mb_strimwidth($title, 0, 255, "..."),
-        ':description' =>isset($description) && strlen($description) <= 600 ? $description
+        ':description' =>$description !== null && strlen($description) <= 600 ? $description
         : mb_strimwidth($description, 0, 600, "..."),
         ':created_at' => $created_at,
     ];
