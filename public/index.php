@@ -59,6 +59,24 @@ $app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, $response) {
+    $pdo = $this->get('connection');
+    $sql = "
+    CREATE TABLE urls (
+        id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        name        varchar(255),
+        created_at  timestamp
+    );
+    
+    CREATE TABLE url_checks (
+        id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        url_id       bigint REFERENCES urls (id),
+        status_code varchar(255),
+        h1            varchar(255),
+        title         varchar(255),
+        description   varchar(600),
+        created_at    timestamp
+    );";
+    $pdo->exec($sql);
         return $this->get('renderer')->render($response, 'index.phtml');
 });
 
@@ -171,6 +189,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         : mb_strimwidth($description, 0, 600, "..."),
         ':created_at' => $created_at,
     ];
+    var_dump($urlParam);
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
