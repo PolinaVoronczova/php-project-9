@@ -59,7 +59,7 @@ $app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, $response) {
-        return $this->get('renderer')->render($response, 'index.phtml');
+    return $this->get('renderer')->render($response, 'index.phtml');
 });
 
 $app->post('/urls', function ($request, $response) use ($router) {
