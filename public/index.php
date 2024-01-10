@@ -77,9 +77,10 @@ $app->post('/urls', function ($request, $response) use ($router) {
         ];
         return $this->get('renderer')->render($response, 'index.phtml', $params)->withStatus(422);
     }
-
+    $urlData = parse_url($url['name']);
+    $urlDomain =  str_replace("www.", "", $urlData['host']);
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
-    $stmt->execute(['name' => $url['name']]);
+    $stmt->execute(['name' => $urlData['host']]);
     $urls = $stmt->fetch(\PDO::FETCH_ASSOC);
 
     if (!$urls) {
@@ -87,7 +88,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
         $created_at = $nowData->format('Y-m-d H:i:s');
         $sql = "INSERT INTO urls (name, created_at) VALUES(:name, :created_at)";
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':name', $url['name']);
+        $stmt->bindValue(':name', $urlDomain);
         $stmt->bindValue(':created_at', $created_at);
         $stmt->execute();
         $id = $pdo->lastInsertId();
@@ -157,7 +158,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $title = optional($document->first('title'))->text();
     $description = optional($document->first('meta[name=description]'))->getAttribute('content');
     $nowData = new DateTime('now');
-    $created_at = $nowData->format('Y-m-d H:i:s');
+    $createdAt = $nowData->format('Y-m-d H:i:s');
     $sql = "INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
     VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)";
     $stmt = $pdo->prepare($sql);
@@ -168,7 +169,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':h1' =>  '',
         ':title' => '',
         ':description' => '',
-        ':created_at' => $created_at,
+        ':created_at' => $createdAt,
     ];
 
     if ($h1 != null) {
