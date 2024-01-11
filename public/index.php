@@ -78,7 +78,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
         return $this->get('renderer')->render($response, 'index.phtml', $params)->withStatus(422);
     }
     $urlData = parse_url($url['name']);
-    $urlDomain =  str_replace("www.", "", $urlData['host']);
+    $urlDomain =  'https://'. str_replace("www.", "", $urlData['host']);
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
     $stmt->execute(['name' => $urlData['host']]);
     $urls = $stmt->fetch(\PDO::FETCH_ASSOC);
