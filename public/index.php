@@ -79,8 +79,9 @@ $app->post('/urls', function ($request, $response) use ($router) {
     }
     $urlData = parse_url($url['name']);
     $urlDomain =  $urlData['scheme'] . '://' . str_replace("www.", "", $urlData['host']);
-    $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
-    $stmt->execute(['name' => $urlData['host']]);
+    $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name1 OR name=:name2");
+    $stmt->execute(['name1' => 'https://' . str_replace("www.", "", $urlData['host']),
+    'name2' => 'http://' . str_replace("www.", "", $urlData['host'])]);
     $urls = $stmt->fetch(\PDO::FETCH_ASSOC);
 
     if (!$urls) {
