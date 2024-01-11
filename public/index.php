@@ -153,6 +153,7 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
 
     $statusCode = optional($answer)->getStatusCode();
     $html = optional($answer)->getBody()->getContents();
+    var_dump($answer->getBody());
     $document = new Document($html, false);
     $h1 = optional($document->first('h1'))->text();
     $title = optional($document->first('title'))->text();
