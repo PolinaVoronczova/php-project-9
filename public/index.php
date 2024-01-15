@@ -78,10 +78,9 @@ $app->post('/urls', function ($request, $response) use ($router) {
         return $this->get('renderer')->render($response, 'index.phtml', $params)->withStatus(422);
     }
     $urlData = parse_url($url['name']);
-    $urlDomain =  $urlData['scheme'] . '://' . str_replace("www.", "", $urlData['host']);
-    $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name1 OR name=:name2");
-    $stmt->execute(['name1' => 'https://' . str_replace("www.", "", $urlData['host']),
-    'name2' => 'http://' . str_replace("www.", "", $urlData['host'])]);
+    $urlDomain =  'https://' . str_replace("www.", "", $urlData['host']);
+    $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
+    $stmt->execute(['name' => $urlDomain]);
     $urls = $stmt->fetch(\PDO::FETCH_ASSOC);
 
     if (!$urls) {
@@ -104,13 +103,13 @@ $app->post('/urls', function ($request, $response) use ($router) {
 $app->get('/urls/{id}', function ($request, $response, $args) {
     $pdo = $this->get('connection');
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
-    $urlCheacks = $pdo->query("SELECT * FROM url_checks
+    $urlChecks = $pdo->query("SELECT * FROM url_checks
     WHERE url_id={$args['id']} ORDER BY url_id DESC")->fetchAll(\PDO::FETCH_ASSOC);
     $messages = $this->get('flash')->getMessages();
     $params = [
         'urls' => $url,
         'flash' => isset($messages) ? $messages : false,
-        'url_checks' => $urlCheacks
+        'url_checks' => $urlChecks
     ];
     $messages = $this->get('flash')->getMessages();
     if (isset($messages)) {
