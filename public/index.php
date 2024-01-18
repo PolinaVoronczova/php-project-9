@@ -60,7 +60,7 @@ $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, $response) {
     $pdo = $this->get('connection');
-    $sql = "DELETE FROM urls; DELETE FROM url_checks;";
+    $sql = "DELETE FROM url_checks; DELETE FROM urls;";
     $pdo->exec($sql);
     return $this->get('renderer')->render($response, 'index.phtml');
 });
