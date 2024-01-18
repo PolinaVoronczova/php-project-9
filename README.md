@@ -9,7 +9,7 @@ Page Analyzer is a website that analyzes the specified pages for SEO suitability
 * Compouser 2.2.4
 ## Installation
     make install
-## Connect database and create table
+## Connect database and create table 
     export DATABASE_URL=postgresql://janedoe:mypassword@localhost:5432/mydb
     psql -a -d $DATABASE_URL -f database.sql
 ## Demo
