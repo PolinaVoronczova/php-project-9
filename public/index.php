@@ -116,13 +116,14 @@ $app->get('/urls', function ($request, $response) {
     $urlChecks = $pdo->query("SELECT DISTINCT ON (url_id) url_id  as id, created_at, status_code
     FROM url_checks
     ORDER BY url_id, created_at DESC;")->fetchAll(\PDO::FETCH_ASSOC);
-    $resultCheaks = [];
-    $checksInfo = collect($urls)->merge(collect($urlChecks))
-    ->groupBy('id', false)->map(function ($value, $key) use (&$resultCheaks) {
-        return $resultCheaks[$key] = array_merge(...$value);
+    $checksByUrlId = collect($urlChecks)->keyBy('id');
+
+    $mergedData = collect($urls)->map(function ($url) use ($checksByUrlId) {
+        $urlCheckData = $checksByUrlId->get($url['id'], []);
+        return array_merge($url, $urlCheckData);
     });
     $params = [
-        'urls' => $resultCheaks
+        'urls' => $mergedData
     ];
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
 })->setName('showUrls');
