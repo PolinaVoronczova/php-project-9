@@ -78,7 +78,7 @@ $app->post('/urls', function ($request, $response) use ($router) {
         return $this->get('renderer')->render($response, 'index.phtml', $params)->withStatus(422);
     }
     $urlData = parse_url($url['name']);
-    $urlDomain =  'https://' . str_replace("www.", "", $urlData['host']);
+    $urlDomain =  $urlData['scheme'] . '://' . str_replace("www.", "", $urlData['host']);
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name1 OR name=:name2");
     $stmt->execute(['name1' => 'https://' . str_replace("www.", "", $urlData['host']),
     'name2' => 'http://' . str_replace("www.", "", $urlData['host'])]);
