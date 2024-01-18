@@ -2,26 +2,21 @@
 
 // Подключение автозагрузки через composer
 require __DIR__ . '/../vendor/autoload.php';
-
 use Slim\Middleware\MethodOverrideMiddleware;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use GuzzleHttp\Client;
 use DiDom\Document;
-
 session_start();
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
-
 $app = AppFactory::createFromContainer($container);
-
 $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
-
 $container->set('connection', function () {
     if (getenv('DATABASE_URL')) {
         $databaseUrl = parse_url(getenv('DATABASE_URL'));
@@ -53,15 +48,12 @@ $container->set('connection', function () {
     $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
     return $pdo;
 });
-
 $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
-
 $app->get('/', function ($request, $response) {
     return $this->get('renderer')->render($response, 'index.phtml');
 });
-
 $app->post('/urls', function ($request, $response) use ($router) {
     $pdo = $this->get('connection');
     $url = $request->getParsedBodyParam('url');
@@ -69,7 +61,6 @@ $app->post('/urls', function ($request, $response) use ($router) {
     $v->rule('required', 'name')->message('URL не должен быть пустым');
     $v->rule('lengthMax', 'name', 255)->message('Длинна ссылки не должна превышать 255 символов');
     $v->rule('url', 'name')->message('Некорректный URL');
-
     if (!$v->validate()) {
         $params = [
             'errors' => $v->errors(),
@@ -79,6 +70,8 @@ $app->post('/urls', function ($request, $response) use ($router) {
     }
     $urlData = parse_url($url['name']);
     $urlDomain =  $urlData['scheme'] . '://' . str_replace("www.", "", $urlData['host']);
+    $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name");
+    $stmt->execute(['name' => $urlData['host']]);
     $stmt = $pdo->prepare("SELECT * FROM urls WHERE name=:name1 OR name=:name2");
     $stmt->execute(['name1' => 'https://' . str_replace("www.", "", $urlData['host']),
     'name2' => 'http://' . str_replace("www.", "", $urlData['host'])]);
@@ -100,17 +93,16 @@ $app->post('/urls', function ($request, $response) use ($router) {
     }
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $id]), 302);
 })->setName('addUrl');
-
 $app->get('/urls/{id}', function ($request, $response, $args) {
     $pdo = $this->get('connection');
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['id']}")->fetch(\PDO::FETCH_ASSOC);
-    $urlChecks = $pdo->query("SELECT * FROM url_checks
+    $urlCheacks = $pdo->query("SELECT * FROM url_checks
     WHERE url_id={$args['id']} ORDER BY url_id DESC")->fetchAll(\PDO::FETCH_ASSOC);
     $messages = $this->get('flash')->getMessages();
     $params = [
         'urls' => $url,
         'flash' => isset($messages) ? $messages : false,
-        'url_checks' => $urlChecks
+        'url_checks' => $urlCheacks
     ];
     $messages = $this->get('flash')->getMessages();
     if (isset($messages)) {
@@ -118,31 +110,25 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
     }
     return $this->get('renderer')->render($response, 'url.phtml', $params);
 })->setName('showUrl');
-
 $app->get('/urls', function ($request, $response) {
     $pdo = $this->get('connection');
-    $urls = $pdo->query("SELECT * FROM urls")->fetchAll(\PDO::FETCH_ASSOC);
-    $urlChecks = $pdo->query("SELECT DISTINCT ON (url_id) url_id  as id, created_at, status_code
-    FROM url_checks
-    ORDER BY url_id, created_at DESC;")->fetchAll(\PDO::FETCH_ASSOC);
-    $checksInfo = collect($urls)->merge(collect($urlChecks))->groupBy('id', false)->map(function ($value, $key) {
-        return $checksInfo[$key] = array_merge(...$value);
-    });
+    $allUrl = $pdo->query("
+    SELECT DISTINCT ON (urls.id) urls.id, urls.name, url_checks.created_at, url_checks.status_code 
+    FROM urls LEFT JOIN url_checks
+    ON urls.id=url_checks.url_id
+    ORDER BY urls.id, url_checks.created_at DESC")->fetchAll(\PDO::FETCH_ASSOC);
     $params = [
-        'urls' => $checksInfo
+        'urls' => $allUrl
     ];
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
 })->setName('showUrls');
-
 $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($router) {
     $pdo = $this->get('connection');
     $url = $pdo->query("SELECT * FROM urls WHERE id={$args['url_id']}")->fetch(\PDO::FETCH_ASSOC);
-
     $client = new Client([
         'base_uri' => $url['name'],
         'timeout'  => 2.0,
     ]);
-
     try {
         $answer = $client->get('/');
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
@@ -153,7 +139,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         $answer = $e->getResponse();
         $this->get('flash')->addMessage('warning', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
     }
-
     $statusCode = optional($answer)->getStatusCode();
     $html = optional($answer)->getBody()->getContents();
     $document = new Document($html, false);
@@ -165,7 +150,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $sql = "INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
     VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)";
     $stmt = $pdo->prepare($sql);
-
     $urlParam = [
         ':url_id' => $args['url_id'],
         ':status_code' => $statusCode,
@@ -174,7 +158,6 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
         ':description' => '',
         ':created_at' => $createdAt,
     ];
-
     if ($h1 != null) {
         $urlParam[':h1'] = strlen($h1) <= 255 ?
         $h1 : mb_strimwidth($h1, 0, 255, "...");
@@ -190,5 +173,4 @@ $app->post('/urls/{url_id}/checks', function ($request, $response, $args) use ($
     $stmt->execute($urlParam);
     return $response->withRedirect($router->urlFor('showUrl', ['id' => $args['url_id']]), 302);
 })->setName('addChecks');
-
 $app->run();
