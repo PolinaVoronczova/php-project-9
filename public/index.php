@@ -112,13 +112,15 @@ $app->get('/urls/{id}', function ($request, $response, $args) {
 })->setName('showUrl');
 $app->get('/urls', function ($request, $response) {
     $pdo = $this->get('connection');
-    $allUrl = $pdo->query("
-    SELECT DISTINCT ON (urls.id) urls.id, urls.name, url_checks.created_at, url_checks.status_code 
-    FROM urls LEFT JOIN url_checks
-    ON urls.id=url_checks.url_id
-    ORDER BY urls.id, url_checks.created_at DESC")->fetchAll(\PDO::FETCH_ASSOC);
+    $urls = $pdo->query("SELECT * FROM urls")->fetchAll(\PDO::FETCH_ASSOC);
+    $urlChecks = $pdo->query("SELECT DISTINCT ON (url_id) url_id  as id, created_at, status_code
+    FROM url_checks
+    ORDER BY url_id, created_at DESC;")->fetchAll(\PDO::FETCH_ASSOC);
+    $checksInfo = collect($urls)->merge(collect($urlChecks))->groupBy('id', false)->map(function ($value, $key) {
+        return $checksInfo[$key] = array_merge(...$value);
+    });
     $params = [
-        'urls' => $allUrl
+        'urls' => $checksInfo
     ];
     return $this->get('renderer')->render($response, 'urls.phtml', $params);
 })->setName('showUrls');
