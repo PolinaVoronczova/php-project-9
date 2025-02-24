@@ -14,4 +14,5 @@ COPY . .
 
 RUN composer install
 
+CMD ["bash", "-c", "make create tables"]
 CMD ["bash", "-c", "make start"]

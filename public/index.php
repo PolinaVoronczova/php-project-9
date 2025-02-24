@@ -7,7 +7,9 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 use GuzzleHttp\Client;
 use DiDom\Document;
+
 session_start();
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
@@ -18,7 +20,6 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 $container->set('connection', function () {
-    var_dump(getenv('DATABASE_URL'));
     if (getenv('DATABASE_URL')) {
         $databaseUrl = parse_url(getenv('DATABASE_URL'));
     }
