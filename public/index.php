@@ -54,6 +54,7 @@ $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
 $app->get('/', function ($request, $response) {
+ /* Создание таблиц для render.com
     $pdo = $this->get('connection');
     $sql =
     'DROP TABLE IF EXISTS url_checks;
@@ -75,7 +76,7 @@ CREATE TABLE url_checks (
     description   varchar(600),
     created_at    timestamp
 );';
-    $pdo->exec($sql);
+    $pdo->exec($sql); */
     return $this->get('renderer')->render($response, 'index.phtml');
 });
 $app->post('/urls', function ($request, $response) use ($router) {
