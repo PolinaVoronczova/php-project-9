@@ -143,7 +143,7 @@ $app->get('/urls', function ($request, $response) {
     ORDER BY url_id, created_at DESC;")->fetchAll(\PDO::FETCH_ASSOC);
     $checksInfo = array_map(function (&$url) use ($urlChecks) {
         $result = [];
-        foreach ($urlChecks as &$check) {
+        foreach ($urlChecks as $check) {
             if ($url['id'] == $check['id']) {
                 $result['id'] = $check['id'];
                 $result['name'] = $url['name'];
