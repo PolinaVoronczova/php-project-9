@@ -10,6 +10,10 @@ use DiDom\Document;
 
 session_start();
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
@@ -141,7 +145,7 @@ $app->get('/urls', function ($request, $response) {
     $urlChecks = $pdo->query("SELECT DISTINCT ON (url_id) url_id  as id, created_at, status_code
     FROM url_checks
     ORDER BY url_id, created_at DESC;")->fetchAll(\PDO::FETCH_ASSOC);
-    $checksInfo = array_map(function (&$url) use ($urlChecks) {
+    $checksInfo = array_map(function ($url) use ($urlChecks) {
         $result = [];
         foreach ($urlChecks as $check) {
             if ($url['id'] == $check['id']) {
